@@ -31,15 +31,14 @@ class CharacterTokenizer(PreTrainedTokenizer):
         """
         self.characters = characters
         self.model_max_length = model_max_length
+        # Heavily using ASCII control codes instead of multichar tokens
+        pad_token = AddedToken("<pad>", lstrip=False, rstrip=False)
         bos_token = AddedToken("<s>", lstrip=False, rstrip=False)
         eos_token = AddedToken("</s>", lstrip=False, rstrip=False)
+        unk_token = AddedToken("<unk>", lstrip=False, rstrip=False)
         sep_token = AddedToken("<sep>", lstrip=False, rstrip=False)
         cls_token = AddedToken("<cls>", lstrip=False, rstrip=False)
-        pad_token = AddedToken("<pad>", lstrip=False, rstrip=False)
-        unk_token = AddedToken("<unk>", lstrip=False, rstrip=False)
-
         mask_token = AddedToken("<mask>", lstrip=True, rstrip=False)
-
         super().__init__(
             bos_token=bos_token,
             eos_token=eos_token,
@@ -58,16 +57,23 @@ class CharacterTokenizer(PreTrainedTokenizer):
             "<s>": 1,
             "</s>": 2,
             "<unk>": 3,
-            **{ch: i for i, ch in enumerate(characters, start=4)},
+            "<sep>": 4,
+            "<cls>": 5,
+            "<mask>": 6,
+            **{ch: i for i, ch in enumerate(characters, start=7)},
         }
         self._vocab_int_to_str = {v: k for k, v in self._vocab_str_to_int.items()}
+
+        self.ascii_2_token = {'\x00': '<pad>', '\x02': '<s>', '\x03': '</s>', '\x18': '<unk>'}
+
 
     @property
     def vocab_size(self) -> int:
         return len(self._vocab_str_to_int)
 
     def _tokenize(self, text: str) -> List[str]:
-        return list(text)
+        cx = list(text.replace('<pad>', '\x00').replace('<s>', '\x02').replace('</s>', '\x03'))
+        return [self.ascii_2_token.get(c, c) for c in cx]
 
     def _convert_token_to_id(self, token: str) -> int:
         return self._vocab_str_to_int.get(token, self._vocab_str_to_int["<unk>"])
@@ -78,15 +84,15 @@ class CharacterTokenizer(PreTrainedTokenizer):
     def convert_tokens_to_string(self, tokens):
         return "".join(tokens)
 
-    def build_inputs_with_special_tokens(
-        self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
-    ) -> List[int]:
-        sep = [self.sep_token_id]
-        cls = [self.cls_token_id]
-        result = cls + token_ids_0 + sep
-        if token_ids_1 is not None:
-            result += token_ids_1 + sep
-        return result
+    # def build_inputs_with_special_tokens(
+    #     self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
+    # ) -> List[int]:
+    #     sep = [self.sep_token_id]
+    #     cls = [self.cls_token_id]
+    #     result = cls + token_ids_0 + sep
+    #     if token_ids_1 is not None:
+    #         result += token_ids_1 + sep
+    #     return result
 
     def get_special_tokens_mask(
         self,
