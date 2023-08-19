@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="charactertokenizer",
-    version="1.0.0",
+    version="1.0.4",
     author="dariush-bahrami, Ilya Koziev",
     author_email="inkoziev@gmail.com",
     description="Character-level tokenizer for charGPT and charLLaMa projects",

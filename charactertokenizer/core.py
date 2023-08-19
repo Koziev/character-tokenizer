@@ -25,7 +25,7 @@ class CharacterTokenizer(PreTrainedTokenizer):
                     "<s>": 1
                     "</s>": 2
                     "<unk>": 3
-                an id (starting at 4) will be assigned to each character.
+                an id (starting at 7) will be assigned to each character.
 
             model_max_length (int): Model maximum sequence length.
         """
