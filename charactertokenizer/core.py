@@ -1,6 +1,8 @@
 """ CharacterTokenzier for Hugging Face Transformers.
 
 This is heavily inspired from CanineTokenizer in transformers package.
+
+19.08.2023 Доработал для использования в проектах char-level GPT и LLaMa - токены <pad>, <s> etc
 """
 import json
 import os
@@ -17,29 +19,26 @@ class CharacterTokenizer(PreTrainedTokenizer):
         Args:
             characters (Sequence[str]): List of desired characters. Any character which
                 is not included in this list will be replaced by a special token called
-                [UNK] with id=6. Following are list of all of the special tokens with
+                <unk> with id=3. Following are list of all of the special tokens with
                 their corresponding ids:
-                    "[CLS]": 0
-                    "[SEP]": 1
-                    "[BOS]": 2
-                    "[MASK]": 3
-                    "[PAD]": 4
-                    "[RESERVED]": 5
-                    "[UNK]": 6
-                an id (starting at 7) will be assigned to each character.
+                    "<pad>": 0
+                    "<s>": 1
+                    "</s>": 2
+                    "<unk>": 3
+                an id (starting at 4) will be assigned to each character.
 
             model_max_length (int): Model maximum sequence length.
         """
         self.characters = characters
         self.model_max_length = model_max_length
-        bos_token = AddedToken("[BOS]", lstrip=False, rstrip=False)
-        eos_token = AddedToken("[SEP]", lstrip=False, rstrip=False)
-        sep_token = AddedToken("[SEP]", lstrip=False, rstrip=False)
-        cls_token = AddedToken("[CLS]", lstrip=False, rstrip=False)
-        pad_token = AddedToken("[PAD]", lstrip=False, rstrip=False)
-        unk_token = AddedToken("[UNK]", lstrip=False, rstrip=False)
+        bos_token = AddedToken("<s>", lstrip=False, rstrip=False)
+        eos_token = AddedToken("</s>", lstrip=False, rstrip=False)
+        sep_token = AddedToken("<sep>", lstrip=False, rstrip=False)
+        cls_token = AddedToken("<cls>", lstrip=False, rstrip=False)
+        pad_token = AddedToken("<pad>", lstrip=False, rstrip=False)
+        unk_token = AddedToken("<unk>", lstrip=False, rstrip=False)
 
-        mask_token = AddedToken("[MASK]", lstrip=True, rstrip=False)
+        mask_token = AddedToken("<mask>", lstrip=True, rstrip=False)
 
         super().__init__(
             bos_token=bos_token,
@@ -55,14 +54,11 @@ class CharacterTokenizer(PreTrainedTokenizer):
         )
 
         self._vocab_str_to_int = {
-            "[CLS]": 0,
-            "[SEP]": 1,
-            "[BOS]": 2,
-            "[MASK]": 3,
-            "[PAD]": 4,
-            "[RESERVED]": 5,
-            "[UNK]": 6,
-            **{ch: i + 7 for i, ch in enumerate(characters)},
+            "<pad>": 0,
+            "<s>": 1,
+            "</s>": 2,
+            "<unk>": 3,
+            **{ch: i for i, ch in enumerate(characters, start=4)},
         }
         self._vocab_int_to_str = {v: k for k, v in self._vocab_str_to_int.items()}
 
@@ -74,7 +70,7 @@ class CharacterTokenizer(PreTrainedTokenizer):
         return list(text)
 
     def _convert_token_to_id(self, token: str) -> int:
-        return self._vocab_str_to_int.get(token, self._vocab_str_to_int["[UNK]"])
+        return self._vocab_str_to_int.get(token, self._vocab_str_to_int["<unk>"])
 
     def _convert_id_to_token(self, index: int) -> str:
         return self._vocab_int_to_str[index]
@@ -123,6 +119,7 @@ class CharacterTokenizer(PreTrainedTokenizer):
 
     def get_config(self) -> Dict:
         return {
+            "name": "CharacterTokenizer",
             "char_ords": [ord(ch) for ch in self.characters],
             "model_max_length": self.model_max_length,
         }
