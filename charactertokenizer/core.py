@@ -3,6 +3,7 @@
 This is heavily inspired from CanineTokenizer in transformers package.
 
 19.08.2023 Доработал для использования в проектах char-level GPT и LLaMa - токены <pad>, <s> etc
+20.08.2023 Добавил вызов add_special_tokens в from_pretrained
 """
 import json
 import os
@@ -66,14 +67,14 @@ class CharacterTokenizer(PreTrainedTokenizer):
 
         self.ascii_2_token = {'\x00': '<pad>', '\x02': '<s>', '\x03': '</s>', '\x18': '<unk>'}
 
-
     @property
     def vocab_size(self) -> int:
         return len(self._vocab_str_to_int)
 
     def _tokenize(self, text: str) -> List[str]:
-        cx = list(text.replace('<pad>', '\x00').replace('<s>', '\x02').replace('</s>', '\x03'))
-        return [self.ascii_2_token.get(c, c) for c in cx]
+        #cx = list(text.replace('<pad>', '\x00').replace('<s>', '\x02').replace('</s>', '\x03'))
+        #return [self.ascii_2_token.get(c, c) for c in cx]
+        return list(text)
 
     def _convert_token_to_id(self, token: str) -> int:
         return self._vocab_str_to_int.get(token, self._vocab_str_to_int["<unk>"])
@@ -148,4 +149,6 @@ class CharacterTokenizer(PreTrainedTokenizer):
         cfg_file = Path(save_directory) / "tokenizer_config.json"
         with open(cfg_file) as f:
             cfg = json.load(f)
-        return cls.from_config(cfg)
+        instance = cls.from_config(cfg)
+        instance.add_special_tokens({'pad_token': '<pad>', 'bos_token': '<s>', 'eos_token': '</s>', 'unk_token': '<unk>'})
+        return instance
