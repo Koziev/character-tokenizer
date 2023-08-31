@@ -1,48 +1,28 @@
 # character-tokenizer
 
-A character tokenizer for Hugging Face Transformers!
+Это специальный **посимвольный** токенизатор, совместимый с библиотекой Hugging Face Transformers.
+Он сделан для использования декодерными causal LM'ками. В частности, он применен при разработке модели [inkoziev/charllama-35M](https://huggingface.co/inkoziev/charllama-35M).
 
-*Note: this code is inspired by Hugging Face [CanineTokenizer](https://github.com/huggingface/transformers/blob/v4.23.1/src/transformers/models/canine/tokenization_canine.py#L63)*
+## Установка
 
-## Example
+```
+pip install git+https://github.com/Koziev/character-tokenizer
+```
+
+## Пример использования
 
 ```py
-import string
-from charactertokenizer import CharacterTokenizer
+import charactertokenizer
 
-chars = string.ascii_letters # This character vocab!
-model_max_length = 2048
-tokenizer = CharacterTokenizer(chars, model_max_length)
+tokenizer = charactertokenizer.CharacterTokenizer.from_pretrained('inkoziev/charllama-35M')
+
+prompt = '<s>У Лукоморья дуб зеленый\n'
+encoded_prompt = tokenizer.encode(prompt, return_tensors='pt')
+print(' | '.join(tokenizer.decode([t]) for t in encoded_prompt[0]))
 ```
 
-Now you can use it to tokenize any string:
-
-```py
-example = "I love NLP!"
-tokens = tokenizer(example)
-print(tokens)
-```
-
-Output:
+Вывод будет таким:
 
 ```
-{
-    "input_ids": [0, 41, 6, 18, 21, 28, 11, 6, 46, 44, 48, 6, 1],
-    "token_type_ids": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    "attention_mask": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-}
+<s> | У |   | Л | у | к | о | м | о | р | ь | я |   | д | у | б |   | з | е | л | е | н | ы | й |
 ```
-
-And like any other tokenizer in Hugging Face you can decode tokens as follow:
-
-```py
-print(tokenizer.decode(tokens["input_ids"]))
-```
-
-Output:
-
-```
-[CLS]I[UNK]love[UNK]NLP[UNK][SEP]
-```
-
-In this example space character and exclamation mark, !, are not in the known characters and therefore will be replaced with unknown special token [UNK].
