@@ -11,6 +11,14 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
 from transformers.tokenization_utils import AddedToken, PreTrainedTokenizer
+from transformers.utils import (
+    cached_file,
+    copy_func,
+    download_url,
+    extract_commit_hash,
+    is_remote_url,
+)
+
 
 
 class CharacterTokenizer(PreTrainedTokenizer):
@@ -85,16 +93,6 @@ class CharacterTokenizer(PreTrainedTokenizer):
     def convert_tokens_to_string(self, tokens):
         return "".join(tokens)
 
-    # def build_inputs_with_special_tokens(
-    #     self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
-    # ) -> List[int]:
-    #     sep = [self.sep_token_id]
-    #     cls = [self.cls_token_id]
-    #     result = cls + token_ids_0 + sep
-    #     if token_ids_1 is not None:
-    #         result += token_ids_1 + sep
-    #     return result
-
     def get_special_tokens_mask(
         self,
         token_ids_0: List[int],
@@ -112,17 +110,6 @@ class CharacterTokenizer(PreTrainedTokenizer):
         if token_ids_1 is not None:
             result += ([0] * len(token_ids_1)) + [1]
         return result
-
-    #def create_token_type_ids_from_sequences(
-    #    self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
-    #) -> List[int]:
-    #    sep = [self.sep_token_id]
-    #    cls = [self.cls_token_id]
-    #
-    #    result = len(cls + token_ids_0 + sep) * [0]
-    #    if token_ids_1 is not None:
-    #        result += len(token_ids_1 + sep) * [1]
-    #    return result
 
     def get_config(self) -> Dict:
         return {
@@ -146,8 +133,58 @@ class CharacterTokenizer(PreTrainedTokenizer):
 
     @classmethod
     def from_pretrained(cls, save_directory: Union[str, os.PathLike], **kwargs):
-        cfg_file = Path(save_directory) / "tokenizer_config.json"
-        with open(cfg_file) as f:
+        #cfg_file = Path(save_directory) / "tokenizer_config.json"
+        cache_dir = kwargs.pop("cache_dir", None)
+        force_download = kwargs.pop("force_download", False)
+        resume_download = kwargs.pop("resume_download", False)
+        proxies = kwargs.pop("proxies", None)
+        token = kwargs.pop("token", None)
+        local_files_only = kwargs.pop("local_files_only", False)
+        revision = kwargs.pop("revision", None)
+        trust_remote_code = kwargs.pop("trust_remote_code", None)
+        subfolder = kwargs.pop("subfolder", "")
+        from_pipeline = kwargs.pop("_from_pipeline", None)
+        from_auto_class = kwargs.pop("_from_auto", False)
+        commit_hash = kwargs.pop("_commit_hash", None)
+
+        is_local = os.path.isdir(save_directory)
+        if os.path.exists(save_directory):
+            resolved_config_file = os.path.join(save_directory, "tokenizer_config.json")
+            is_local = True
+        else:
+            configuration_file = "tokenizer_config.json"
+
+            try:
+                # Load from local folder or from cache or download from model Hub and cache
+                resolved_config_file = cached_file(
+                    save_directory,
+                    configuration_file,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    proxies=proxies,
+                    resume_download=resume_download,
+                    local_files_only=local_files_only,
+                    token=token,
+                    #user_agent=user_agent,
+                    revision=revision,
+                    subfolder=subfolder,
+                    _commit_hash=commit_hash,
+                )
+                commit_hash = extract_commit_hash(resolved_config_file, commit_hash)
+            except EnvironmentError:
+                # Raise any environment error raise by `cached_file`. It will have a helpful error message adapted to
+                # the original exception.
+                raise
+            except Exception:
+                # For any other exception, we throw a generic error.
+                raise EnvironmentError(
+                    f"Can't load the configuration of '{save_directory}'. If you were trying to load it"
+                    " from 'https://huggingface.co/models', make sure you don't have a local directory with the same"
+                    f" name. Otherwise, make sure '{save_directory}' is the correct path to a directory"
+                    f" containing a {save_directory} file"
+                )
+
+        with open(resolved_config_file) as f:
             cfg = json.load(f)
         instance = cls.from_config(cfg)
         instance.add_special_tokens({'pad_token': '<pad>', 'bos_token': '<s>', 'eos_token': '</s>', 'unk_token': '<unk>'})
