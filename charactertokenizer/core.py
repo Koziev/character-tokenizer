@@ -20,7 +20,6 @@ from transformers.utils import (
 )
 
 
-
 class CharacterTokenizer(PreTrainedTokenizer):
     def __init__(self, characters: Sequence[str], model_max_length: int, **kwargs):
         """Character tokenizer for Hugging Face transformers.
@@ -48,18 +47,6 @@ class CharacterTokenizer(PreTrainedTokenizer):
         sep_token = AddedToken("<sep>", lstrip=False, rstrip=False)
         cls_token = AddedToken("<cls>", lstrip=False, rstrip=False)
         mask_token = AddedToken("<mask>", lstrip=True, rstrip=False)
-        super().__init__(
-            bos_token=bos_token,
-            eos_token=eos_token,
-            sep_token=sep_token,
-            cls_token=cls_token,
-            pad_token=pad_token,
-            mask_token=mask_token,
-            unk_token=unk_token,
-            add_prefix_space=False,
-            model_max_length=model_max_length,
-            **kwargs,
-        )
 
         self._vocab_str_to_int = {
             "<pad>": 0,
@@ -75,13 +62,31 @@ class CharacterTokenizer(PreTrainedTokenizer):
 
         self.ascii_2_token = {'\x00': '<pad>', '\x02': '<s>', '\x03': '</s>', '\x18': '<unk>'}
 
+        super().__init__(
+            bos_token=bos_token,
+            eos_token=eos_token,
+            sep_token=sep_token,
+            cls_token=cls_token,
+            pad_token=pad_token,
+            mask_token=mask_token,
+            unk_token=unk_token,
+            add_prefix_space=False,
+            model_max_length=model_max_length,
+            **kwargs,
+        )
+
     @property
     def vocab_size(self) -> int:
         return len(self._vocab_str_to_int)
 
+    def get_vocab(self):
+        vocab = {chr(i): i for i in range(self.vocab_size)}
+        vocab.update(self.added_tokens_encoder)
+        return vocab
+
     def _tokenize(self, text: str) -> List[str]:
-        #cx = list(text.replace('<pad>', '\x00').replace('<s>', '\x02').replace('</s>', '\x03'))
-        #return [self.ascii_2_token.get(c, c) for c in cx]
+        # cx = list(text.replace('<pad>', '\x00').replace('<s>', '\x02').replace('</s>', '\x03'))
+        # return [self.ascii_2_token.get(c, c) for c in cx]
         return list(text)
 
     def _convert_token_to_id(self, token: str) -> int:
@@ -94,10 +99,10 @@ class CharacterTokenizer(PreTrainedTokenizer):
         return "".join(tokens)
 
     def get_special_tokens_mask(
-        self,
-        token_ids_0: List[int],
-        token_ids_1: Optional[List[int]] = None,
-        already_has_special_tokens: bool = False,
+            self,
+            token_ids_0: List[int],
+            token_ids_1: Optional[List[int]] = None,
+            already_has_special_tokens: bool = False,
     ) -> List[int]:
         if already_has_special_tokens:
             return super().get_special_tokens_mask(
@@ -133,7 +138,7 @@ class CharacterTokenizer(PreTrainedTokenizer):
 
     @classmethod
     def from_pretrained(cls, save_directory: Union[str, os.PathLike], **kwargs):
-        #cfg_file = Path(save_directory) / "tokenizer_config.json"
+        # cfg_file = Path(save_directory) / "tokenizer_config.json"
         cache_dir = kwargs.pop("cache_dir", None)
         force_download = kwargs.pop("force_download", False)
         resume_download = kwargs.pop("resume_download", False)
@@ -165,7 +170,7 @@ class CharacterTokenizer(PreTrainedTokenizer):
                     resume_download=resume_download,
                     local_files_only=local_files_only,
                     token=token,
-                    #user_agent=user_agent,
+                    # user_agent=user_agent,
                     revision=revision,
                     subfolder=subfolder,
                     _commit_hash=commit_hash,
@@ -187,5 +192,6 @@ class CharacterTokenizer(PreTrainedTokenizer):
         with open(resolved_config_file) as f:
             cfg = json.load(f)
         instance = cls.from_config(cfg)
-        instance.add_special_tokens({'pad_token': '<pad>', 'bos_token': '<s>', 'eos_token': '</s>', 'unk_token': '<unk>'})
+        instance.add_special_tokens(
+            {'pad_token': '<pad>', 'bos_token': '<s>', 'eos_token': '</s>', 'unk_token': '<unk>'})
         return instance
