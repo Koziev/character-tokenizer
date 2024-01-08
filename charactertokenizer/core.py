@@ -350,3 +350,6 @@ class SyllabicTokenizer(PreTrainedTokenizer):
         instance = cls.from_config(cfg)
         instance.add_special_tokens({'pad_token': '<pad>', 'bos_token': '<s>', 'eos_token': '</s>', 'unk_token': '<unk>'})
         return instance
+
+    def get_vocab(self) -> Dict[str, int]:
+        return self._vocab_str_to_int
