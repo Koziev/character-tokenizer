@@ -216,7 +216,6 @@ class CharacterTokenizer(PreTrainedTokenizer):
         **kwargs,
     ):
         return super().encode_plus(text=text,
-                                   text_pair=None,
                                    add_special_tokens=add_special_tokens,
                                    padding=padding,
                                    truncation=truncation,
@@ -225,7 +224,6 @@ class CharacterTokenizer(PreTrainedTokenizer):
                                    is_split_into_words=False,
                                    pad_to_multiple_of=pad_to_multiple_of,
                                    return_tensors=return_tensors,
-                                   return_token_type_ids=False,
                                    return_attention_mask=return_attention_mask,
                                    return_overflowing_tokens=return_overflowing_tokens,
                                    return_special_tokens_mask=return_special_tokens_mask,
