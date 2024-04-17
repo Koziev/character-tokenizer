@@ -195,6 +195,47 @@ class CharacterTokenizer(PreTrainedTokenizer):
     def get_vocab(self) -> Dict[str, int]:
         return self._vocab_str_to_int
 
+    def encode_plus(
+        self,
+        text,
+        add_special_tokens=True,
+        padding=False,
+        truncation=None,
+        max_length=None,
+        stride=0,
+        is_split_into_words=False,
+        pad_to_multiple_of=None,
+        return_tensors=None,
+        return_token_type_ids=False,
+        return_attention_mask=None,
+        return_overflowing_tokens=False,
+        return_special_tokens_mask=False,
+        return_offsets_mapping=False,
+        return_length=False,
+        verbose=True,
+        **kwargs,
+    ):
+        return super().encode_plus(text=text,
+                                   text_pair=None,
+                                   add_special_tokens=add_special_tokens,
+                                   padding=padding,
+                                   truncation=truncation,
+                                   max_length=max_length,
+                                   stride=stride,
+                                   is_split_into_words=False,
+                                   pad_to_multiple_of=pad_to_multiple_of,
+                                   return_tensors=return_tensors,
+                                   return_token_type_ids=False,
+                                   return_attention_mask=return_attention_mask,
+                                   return_overflowing_tokens=return_overflowing_tokens,
+                                   return_special_tokens_mask=return_special_tokens_mask,
+                                   return_offsets_mapping=return_offsets_mapping,
+                                   return_length=return_length,
+                                   verbose=verbose,
+                                   **kwargs
+                                   )
+
+
 
 class SyllabicTokenizer(PreTrainedTokenizer):
     def __init__(self, model_max_length: int, vocabulary: Sequence[str] = None, vocab_str_to_int=None, **kwargs):
